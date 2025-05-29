@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>หน้าแรก - สภานักเรียน</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f0f4fa;
+      color: #333;
+    }
+
+    header {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      height: 220px;
+    }
+
+    header img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      animation: slide 15s infinite alternate ease-in-out;
+    }
+
+    header .login-button {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      background-color: #0077cc;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    header .login-button:hover {
+      background-color: #005fa3;
+    }
+
+    @keyframes slide {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    h1 {
+      text-align: center;
+      margin: 10px;
+      color: #004080;
+    }
+
+    nav {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    nav button {
+      padding: 10px 16px;
+      margin: 4px;
+      border: none;
+      background: #0077cc;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    nav button:hover,
+    nav button.active {
+      background: #005fa3;
+    }
+
+    section {
+      display: none;
+      max-width: 750px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    section.active {
+      display: block;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    li:last-child {
+      border-bottom: none;
+    }
+
+    img.member-photo {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    button {
+      background: #0077cc;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: 1.5px solid #ccc;
+      font-size: 1rem;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #0077cc;
+      box-shadow: 0 0 5px rgba(0,119,204,0.4);
+    }
+
+    .lightbox {
+      position: fixed;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.75);
+      z-index: 1000;
+    }
+
+    .lightbox img {
+      max-width: 90%;
+      max-height: 80%;
+      border-radius: 10px;
+    }
+
+    .lightbox.active {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&w=2100&q=80" alt="ภาพโรงเรียน">
+    <a href="login.html" class="login-button">เข้าสู่ระบบ</a>
+  </header>
+
+  <h1>สภานักเรียน โรงเรียนชัยนาทพิทยาคม</h1>
+
+  <nav>
+    <button class="tab-button active" data-tab="activities">ปฏิทินกิจกรรม</button>
+    <button class="tab-button" data-tab="positions">รายชื่อคณะกรรมการ</button>
+    <button class="tab-button" data-tab="documents">ดาวน์โหลดเอกสาร</button>
+    <button class="tab-button" data-tab="problems">แจ้งปัญหา</button>
+  </nav>
+
+  <section id="activities" class="active">
+    <h2>📅 ปฏิทินกิจกรรม</h2>
+    <ul id="activitiesList"></ul>
+  </section>
+
+  <section id="positions">
+    <h2>👥 รายชื่อคณะกรรมการ</h2>
+    <ul id="positionsList"></ul>
+  </section>
+
+  <section id="documents">
+    <h2>📎 ดาวน์โหลดเอกสาร</h2>
+    <ul id="documentsList"></ul>
+  </section>
+
+  <section id="problems">
+    <h2>📝 แจ้งปัญหา</h2>
+    <form id="problemForm">
+      <input type="text" name="studentName" placeholder="ชื่อผู้แจ้ง" required />
+      <textarea name="description" rows="4" placeholder="รายละเอียดปัญหา" required></textarea>
+      <button type="submit">ส่งปัญหา</button>
+    </form>
+  </section>
+
+  <div id="lightbox" class="lightbox">
+    <img src="" alt="ขยายภาพ">
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import {
+      getFirestore, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDT9XW3-TA25iDssvSheP-a5OZZtAisBAg",
+      authDomain: "cnpsapa.firebaseapp.com",
+      projectId: "cnpsapa",
+      storageBucket: "cnpsapa.appspot.com",
+      messagingSenderId: "356204392594",
+      appId: "1:356204392594:web:f1ff3fcac2777e1c12364b",
+      measurementId: "G-KMVFRLZSFZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const activitiesList = document.getElementById('activitiesList');
+    const positionsList = document.getElementById('positionsList');
+    const documentsList = document.getElementById('documentsList');
+    const problemForm = document.getElementById('problemForm');
+
+    onSnapshot(query(collection(db, 'activities'), orderBy('date')), snapshot => {
+      activitiesList.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        li.textContent = `${data.date} - ${data.title}`;
+        activitiesList.appendChild(li);
+      });
+    });
+
+    onSnapshot(collection(db, 'positions'), snapshot => {
+      positionsList.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        const img = document.createElement('img');
+        img.src = data.imageURL || 'https://via.placeholder.com/60';
+        img.alt = data.name;
+        img.className = 'member-photo';
+        img.addEventListener('click', () => {
+          const lightbox = document.getElementById('lightbox');
+          const lightboxImg = lightbox.querySelector('img');
+          lightboxImg.src = img.src;
+          lightbox.classList.add('active');
+        });
+        li.appendChild(img);
+        li.appendChild(document.createTextNode(data.name));
+        positionsList.appendChild(li);
+      });
+    });
+
+    onSnapshot(collection(db, 'documents'), snapshot => {
+      documentsList.innerHTML = '';
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = data.fileURL;
+        a.textContent = data.name;
+        a.target = '_blank';
+        li.appendChild(a);
+        documentsList.appendChild(li);
+      });
+    });
+
+    problemForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const studentName = problemForm.studentName.value.trim();
+      const description = problemForm.description.value.trim();
+      if (!studentName || !description) {
+        alert('กรุณากรอกข้อมูลให้ครบ');
+        return;
+      }
+      await addDoc(collection(db, 'problems'), {
+        studentName,
+        description,
+        createdAt: serverTimestamp()
+      });
+      alert('ส่งข้อมูลเรียบร้อย');
+      problemForm.reset();
+    });
+
+    document.getElementById('lightbox').addEventListener('click', () => {
+      document.getElementById('lightbox').classList.remove('active');
+    });
+
+    document.querySelectorAll('.tab-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
