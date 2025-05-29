@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - จัดการข้อมูลสภานักเรียน</title>
+  <style>
+    /* Reset & Base */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #e3f2fd;
+      margin: 0;
+      padding: 20px;
+      color: #212121;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #1565c0;
+      margin-bottom: 40px;
+      font-weight: 700;
+      text-align: center;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    }
+    section {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(21, 101, 192, 0.15);
+      padding: 25px 30px;
+      max-width: 720px;
+      width: 100%;
+      margin-bottom: 30px;
+    }
+    h2 {
+      color: #0d47a1;
+      margin-bottom: 20px;
+      border-bottom: 3px solid #42a5f5;
+      padding-bottom: 8px;
+      font-weight: 600;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="url"] {
+      flex: 1 1 200px;
+      padding: 10px 15px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1.8px solid #90caf9;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="url"]:focus {
+      outline: none;
+      border-color: #1976d2;
+      box-shadow: 0 0 8px #42a5f5;
+    }
+    button[type="submit"] {
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 4px 10px rgba(25, 118, 210, 0.4);
+    }
+    button[type="submit"]:hover {
+      background-color: #0d47a1;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    li {
+      background: #e3f2fd;
+      margin-bottom: 14px;
+      padding: 14px 20px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(21, 101, 192, 0.15);
+      font-size: 1.05rem;
+      color: #0d47a1;
+      user-select: none;
+    }
+
+    li .info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-grow: 1;
+      color: #0d47a1;
+    }
+
+    li img {
+      width: 44px;
+      height: 44px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid #42a5f5;
+      box-shadow: 0 0 5px rgba(66, 165, 245, 0.7);
+    }
+
+    li button.delete {
+      background-color: #e53935;
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 3px 8px rgba(229, 57, 53, 0.6);
+    }
+    li button.delete:hover {
+      background-color: #b71c1c;
+    }
+
+    /* Scrollbar styling for lists */
+    ul::-webkit-scrollbar {
+      width: 8px;
+    }
+    ul::-webkit-scrollbar-track {
+      background: #bbdefb;
+      border-radius: 8px;
+    }
+    ul::-webkit-scrollbar-thumb {
+      background: #1976d2;
+      border-radius: 8px;
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDT9XW3-TA25iDssvSheP-a5OZZtAisBAg",
+      authDomain: "cnpsapa.firebaseapp.com",
+      projectId: "cnpsapa",
+      storageBucket: "cnpsapa.firebasestorage.app",
+      messagingSenderId: "356204392594",
+      appId: "1:356204392594:web:f1ff3fcac2777e1c12364b",
+      measurementId: "G-KMVFRLZSFZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // กิจกรรม
+      const activityForm = document.getElementById('activityForm');
+      const activitiesList = document.getElementById('activitiesList');
+
+      activityForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const title = activityForm.title.value.trim();
+        const date = activityForm.date.value;
+        if (!title || !date) {
+          alert('กรุณากรอกชื่อกิจกรรมและวันที่');
+          return;
+        }
+        try {
+          await addDoc(collection(db, 'activities'), {
+            title, date, createdAt: serverTimestamp()
+          });
+          activityForm.reset();
+        } catch (err) {
+          alert('เพิ่มกิจกรรมล้มเหลว');
+          console.error(err);
+        }
+      });
+
+      const activitiesQuery = query(collection(db, 'activities'), orderBy('date'));
+      onSnapshot(activitiesQuery, snapshot => {
+        activitiesList.innerHTML = '';
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const li = document.createElement('li');
+          li.textContent = `${data.date} - ${data.title}`;
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'ลบ';
+          delBtn.classList.add('delete');
+          delBtn.onclick = async () => {
+            if (confirm('ต้องการลบกิจกรรมนี้หรือไม่?')) {
+              try {
+                await deleteDoc(doc(db, 'activities', docSnap.id));
+              } catch (error) {
+                alert('ลบกิจกรรมไม่สำเร็จ');
+                console.error(error);
+              }
+            }
+          };
+
+          li.appendChild(delBtn);
+          activitiesList.appendChild(li);
+        });
+      });
+
+      // ตำแหน่งและรูป
+      const positionForm = document.getElementById('positionForm');
+      const positionsList = document.getElementById('positionsList');
+
+      positionForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const name = positionForm.name.value.trim();
+        const imageURL = positionForm.imageURL.value.trim();
+        if (!name || !imageURL) {
+          alert('กรุณากรอกชื่อตำแหน่งและ URL รูปภาพ');
+          return;
+        }
+        try {
+          await addDoc(collection(db, 'positions'), { name, imageURL, createdAt: serverTimestamp() });
+          positionForm.reset();
+        } catch (err) {
+          alert('เพิ่มตำแหน่งล้มเหลว');
+          console.error(err);
+        }
+      });
+
+      onSnapshot(collection(db, 'positions'), snapshot => {
+        positionsList.innerHTML = '';
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const li = document.createElement('li');
+
+          const infoDiv = document.createElement('div');
+          infoDiv.className = 'info';
+
+          const img = document.createElement('img');
+          img.src = data.imageURL;
+          img.alt = data.name;
+
+          const span = document.createElement('span');
+          span.textContent = data.name;
+
+          infoDiv.appendChild(img);
+          infoDiv.appendChild(span);
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'ลบ';
+          delBtn.classList.add('delete');
+          delBtn.onclick = async () => {
+            if (confirm('ต้องการลบตำแหน่งนี้หรือไม่?')) {
+              try {
+                await deleteDoc(doc(db, 'positions', docSnap.id));
+              } catch (error) {
+                alert('ลบตำแหน่งไม่สำเร็จ');
+                console.error(error);
+              }
+            }
+          };
+
+          li.appendChild(infoDiv);
+          li.appendChild(delBtn);
+          positionsList.appendChild(li);
+        });
+      });
+
+      // เอกสารดาวน์โหลด
+      const documentForm = document.getElementById('documentForm');
+      const documentsList = document.getElementById('documentsList');
+
+      documentForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const name = documentForm.name.value.trim();
+        const fileURL = documentForm.fileURL.value.trim();
+        if (!name || !fileURL) {
+          alert('กรุณากรอกชื่อเอกสารและ URL');
+          return;
+        }
+        try {
+          await addDoc(collection(db, 'documents'), { name, fileURL, createdAt: serverTimestamp() });
+          documentForm.reset();
+        } catch (err) {
+          alert('เพิ่มเอกสารล้มเหลว');
+          console.error(err);
+        }
+      });
+
+      onSnapshot(collection(db, 'documents'), snapshot => {
+        documentsList.innerHTML = '';
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const li = document.createElement('li');
+          li.textContent = data.name + ' ';
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'ลบ';
+          delBtn.classList.add('delete');
+          delBtn.onclick = async () => {
+            if (confirm('ต้องการลบเอกสารนี้หรือไม่?')) {
+              try {
+                await deleteDoc(doc(db, 'documents', docSnap.id));
+              } catch (error) {
+                alert('ลบเอกสารไม่สำเร็จ');
+                console.error(error);
+              }
+            }
+          };
+
+          li.appendChild(delBtn);
+          documentsList.appendChild(li);
+        });
+      });
+
+      // ปัญหานักเรียน
+      const problemsList = document.getElementById('problemsList');
+      const problemsQuery = query(collection(db, 'problems'), orderBy('createdAt', 'desc'));
+      onSnapshot(problemsQuery, snapshot => {
+        problemsList.innerHTML = '';
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${data.studentName}</strong>: ${data.description}`;
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'ลบ';
+          delBtn.classList.add('delete');
+          delBtn.onclick = async () => {
+            if (confirm('ต้องการลบปัญหานี้หรือไม่?')) {
+              try {
+                await deleteDoc(doc(db, 'problems', docSnap.id));
+              } catch (error) {
+                alert('ลบปัญหาไม่สำเร็จ');
+                console.error(error);
+              }
+            }
+          };
+
+          li.appendChild(delBtn);
+          problemsList.appendChild(li);
+        });
+      });
+    });
+          // รายชื่อสมาชิก
+      const userList = document.getElementById('userList');
+      const userQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+      onSnapshot(userQuery, snapshot => {
+        userList.innerHTML = '';
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <strong>${data.username}</strong> | <em>${data.password}</em>
+          `;
+
+          const editBtn = document.createElement('button');
+          editBtn.textContent = 'แก้ไข';
+          editBtn.classList.add('delete');
+          editBtn.onclick = async () => {
+            const newUsername = prompt("ชื่อผู้ใช้ใหม่:", data.username);
+            const newPassword = prompt("รหัสผ่านใหม่:", data.password);
+            if (newUsername && newPassword) {
+              try {
+                await updateDoc(doc(db, 'users', docSnap.id), {
+                  username: newUsername,
+                  password: newPassword
+                });
+              } catch (error) {
+                alert("แก้ไขข้อมูลไม่สำเร็จ");
+                console.error(error);
+              }
+            }
+          };
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'ลบ';
+          delBtn.classList.add('delete');
+          delBtn.onclick = async () => {
+            if (confirm('ต้องการลบสมาชิกนี้หรือไม่?')) {
+              try {
+                await deleteDoc(doc(db, 'users', docSnap.id));
+              } catch (error) {
+                alert('ลบไม่สำเร็จ');
+                console.error(error);
+              }
+            }
+          };
+
+          li.appendChild(editBtn);
+          li.appendChild(delBtn);
+          userList.appendChild(li);
+        });
+      });
+      // ลาหยุด
+const leavesList = document.getElementById('leavesList');
+const leavesQuery = query(collection(db, 'leaves'), orderBy('createdAt', 'desc'));
+
+onSnapshot(leavesQuery, snapshot => {
+  leavesList.innerHTML = '';
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    const date = data.createdAt?.toDate().toLocaleString("th-TH") || "ไม่พบวันที่";
+    const li = document.createElement('li');
+    li.innerHTML = `
+  <div>
+    <strong>${data.name}</strong> | ${date} | สถานะ: ${data.status}<br>
+    <em>เหตุผล:</em> ${data.description || "ไม่มีคำอธิบาย"}
+  </div>
+`;
+
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'ลบ';
+    delBtn.classList.add('delete-leave');
+    delBtn.onclick = async () => {
+      const confirmDelete = confirm('คุณต้องการลบคำขอลานี้ใช่หรือไม่?');
+      if (confirmDelete) {
+        try {
+          await deleteDoc(doc(db, 'leaves', docSnap.id));
+          alert('ลบข้อมูลสำเร็จ');
+        } catch (error) {
+          alert('เกิดข้อผิดพลาดในการลบ');
+          console.error(error);
+        }
+      }
+    };
+
+    li.appendChild(delBtn);
+    leavesList.appendChild(li);
+  });
+});
+
+
+
+
+
+  </script>
+</head>
+<body>
+  <h1>Admin - จัดการข้อมูลสภานักเรียน</h1>
+
+  <section>
+    <h2>เพิ่มกิจกรรม</h2>
+    <form id="activityForm">
+      <input type="text" name="title" placeholder="ชื่อกิจกรรม" required />
+      <input type="date" name="date" required />
+      <button type="submit">เพิ่มกิจกรรม</button>
+    </form>
+    <ul id="activitiesList"></ul>
+  </section>
+
+  <section>
+    <h2>เพิ่มตำแหน่งและรูป</h2>
+    <form id="positionForm">
+      <input type="text" name="name" placeholder="ชื่อตำแหน่ง" required />
+      <input type="url" name="imageURL" placeholder="URL รูปภาพ" required />
+      <button type="submit">เพิ่มตำแหน่ง</button>
+    </form>
+    <ul id="positionsList"></ul>
+  </section>
+
+  <section>
+    <h2>เพิ่มเอกสารดาวน์โหลด</h2>
+    <form id="documentForm">
+      <input type="text" name="name" placeholder="ชื่อเอกสาร" required />
+      <input type="url" name="fileURL" placeholder="URL เอกสาร" required />
+      <button type="submit">เพิ่มเอกสาร</button>
+    </form>
+    <ul id="documentsList"></ul>
+  </section>
+
+  <section>
+    <h2>ปัญหาที่นักเรียนแจ้งเข้ามา</h2>
+    <ul id="problemsList"></ul>
+  </section>
+  <section>
+  <h2>name/password</h2>
+  <ul id="userList"></ul>
+</section>
+<section>
+  <h2>เช็คการมา/ขาด</h2>
+  <ul id="leavesList"></ul>
+</section>
+
+
+</body>
+</html>
