@@ -31,12 +31,13 @@
         return;
       }
 
-      // ตรวจสอบผู้ดูแลระบบ
+      // ✅ เช็คแอดมิน
       if (username === "admincnp" && password === "cnp12345") {
         window.location.href = "admin.html";
         return;
       }
 
+      // ✅ เช็คจาก Firebase
       try {
         const q = query(
           collection(db, "users"),
@@ -46,8 +47,8 @@
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-          alert("เข้าสู่ระบบสำเร็จ!");
-          window.location.href = "sapa.html"; // เปลี่ยนตามหน้าที่ต้องการ
+          alert("เข้าสู่ระบบสำเร็จ");
+          window.location.href = "sapa.html"; // เปลี่ยนตามหน้าที่คุณต้องการ
         } else {
           alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
         }
@@ -74,7 +75,7 @@
           createdAt: new Date()
         });
         alert("สมัครสมาชิกสำเร็จ!");
-        window.location.href = "sapa.html"; // เปลี่ยนตามหน้าที่ต้องการ
+        window.location.href = "sapa.html"; // ไปหน้าหลักหลังสมัคร
       } catch (error) {
         console.error("สมัครสมาชิกล้มเหลว:", error);
         alert("เกิดข้อผิดพลาดในการสมัครสมาชิก");
