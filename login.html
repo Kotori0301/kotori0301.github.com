@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>เข้าสู่ระบบ</title>
+  <script type="module">
+    // 🔥 Firebase Config
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDT9XW3-TA25iDssvSheP-a5OZZtAisBAg",
+      authDomain: "cnpsapa.firebaseapp.com",
+      projectId: "cnpsapa",
+      storageBucket: "cnpsapa.firebasestorage.app",
+      messagingSenderId: "356204392594",
+      appId: "1:356204392594:web:f1ff3fcac2777e1c12364b",
+      measurementId: "G-KMVFRLZSFZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 🟩 ฟังก์ชันเข้าสู่ระบบ
+    window.handleLogin = async () => {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!username || !password) {
+        alert("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน");
+        return;
+      }
+
+      if (username === "admincnp" && password === "cnp12345") {
+        window.location.href = "admin.html";
+      } else {
+        alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (หากยังไม่ได้สมัครสมาชิก ให้กดปุ่มสมัครสมาชิกก่อน)");
+      }
+    };
+
+    // 🟦 ฟังก์ชันสมัครสมาชิก
+    window.handleRegister = async () => {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!username || !password) {
+        alert("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน");
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "users"), {
+          username,
+          password,
+          createdAt: new Date()
+        });
+        alert("สมัครสมาชิกสำเร็จ!");
+        window.location.href = "sapa.html";
+      } catch (error) {
+        console.error("สมัครสมาชิกล้มเหลว:", error);
+        alert("เกิดข้อผิดพลาดในการสมัครสมาชิก");
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background-color: #f0f0f0;
+    }
+
+    .login-container {
+      background: white;
+      padding: 2rem;
+      max-width: 400px;
+      margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 48%;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-login {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .btn-register {
+      background-color: #2196F3;
+      color: white;
+      float: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>เข้าสู่ระบบ / สมัครสมาชิก</h2>
+    <input type="text" id="username" placeholder="ชื่อผู้ใช้" />
+    <input type="password" id="password" placeholder="รหัสผ่าน" />
+    <div>
+      <button class="btn-login" onclick="handleLogin()">เข้าสู่ระบบ</button>
+      <button class="btn-register" onclick="handleRegister()">สมัครสมาชิก</button>
+    </div>
+  </div>
+</body>
+</html>
