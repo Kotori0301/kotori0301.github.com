@@ -6,7 +6,7 @@
   <script type="module">
     // 🔥 Firebase Config
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDT9XW3-TA25iDssvSheP-a5OZZtAisBAg",
@@ -31,10 +31,29 @@
         return;
       }
 
+      // ตรวจสอบผู้ดูแลระบบ
       if (username === "admincnp" && password === "cnp12345") {
         window.location.href = "admin.html";
-      } else {
-        alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง (หากยังไม่ได้สมัครสมาชิก ให้กดปุ่มสมัครสมาชิกก่อน)");
+        return;
+      }
+
+      try {
+        const q = query(
+          collection(db, "users"),
+          where("username", "==", username),
+          where("password", "==", password)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          alert("เข้าสู่ระบบสำเร็จ!");
+          window.location.href = "sapa.html"; // เปลี่ยนตามหน้าที่ต้องการ
+        } else {
+          alert("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+        }
+      } catch (error) {
+        console.error("เกิดข้อผิดพลาดในการเข้าสู่ระบบ:", error);
+        alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
       }
     };
 
@@ -55,7 +74,7 @@
           createdAt: new Date()
         });
         alert("สมัครสมาชิกสำเร็จ!");
-        window.location.href = "sapa.html";
+        window.location.href = "sapa.html"; // เปลี่ยนตามหน้าที่ต้องการ
       } catch (error) {
         console.error("สมัครสมาชิกล้มเหลว:", error);
         alert("เกิดข้อผิดพลาดในการสมัครสมาชิก");
